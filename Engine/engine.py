@@ -2,8 +2,9 @@ import sys
 import sdl2
 import sdl2.ext
 import constants as cst
-from movement import MovementSystem, RelativeMovementSystem, RelativeFrictionSystem
-from entities import Car, RelativeCar, DebugInfo
+from movement import RelativeMovementSystem, RelativeFrictionSystem
+from collision import CollisionSystem
+from entities import RelativeCar, DebugInfo, VerticalWall, HorizontalWall
 from debugsystem import CarDebugSystem
 
 class SoftwareRenderer(sdl2.ext.SoftwareSpriteRenderSystem):
@@ -27,12 +28,14 @@ def run():
 
     movement = RelativeMovementSystem(0, 0, cst.WINDOW_WIDTH, cst.WINDOW_HEIGHT)
     friction = RelativeFrictionSystem()
+    collision = CollisionSystem(0, 0, cst.WINDOW_WIDTH, cst.WINDOW_HEIGHT)
     cardebug = CarDebugSystem()
     spriterenderer = factory.create_sprite_render_system()
     
     
     world.add_system(friction)
     world.add_system(movement)
+    world.add_system(collision)
     world.add_system(cardebug)
     world.add_system(spriterenderer)
 
@@ -42,9 +45,13 @@ def run():
     car.relativevelocity.acceleration = 0
     car.relativevelocity.angle = 0
 
-    debug_info = DebugInfo(world, 0, 0, renderer=renderer)
+    DebugInfo(world, 0, 0, renderer=renderer)
+
+    VerticalWall(world, 100, 100, 300, cst.WHITE, factory)
+    HorizontalWall(world, 400, 400, 200, cst.RED, factory)
 
     cardebug.car = car
+    collision.car = car
 
     running = True
     while running:

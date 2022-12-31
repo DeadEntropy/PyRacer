@@ -1,6 +1,7 @@
 import sdl2.ext
 import numpy as np
 from enum import Enum 
+import constants as cst
 
 class MovementSystem(sdl2.ext.Applicator):
     def __init__(self, minx, miny, maxx, maxy):
@@ -45,7 +46,6 @@ class MovementSystem(sdl2.ext.Applicator):
             sprite.y = int(velocity.y)
 
 class RelativeMovementSystem(sdl2.ext.Applicator):
-    PI = 3.141592
 
     def __init__(self, minx, miny, maxx, maxy):
         super(RelativeMovementSystem, self).__init__()
@@ -55,39 +55,39 @@ class RelativeMovementSystem(sdl2.ext.Applicator):
         self.maxx = maxx
         self.maxy = maxy
 
+
     def process(self, world, componentsets):
         print(f"Process - {type(self).__name__}")
         for relativevelocity, relativeFriction, sprite in componentsets:
             swidth, sheight = sprite.size
             
             relativevelocity.speed += relativevelocity.acceleration + relativeFriction.friction_force
-            relativevelocity.angle = (relativevelocity.angle + relativevelocity.angular_acceleration) % (2 * self.PI)
+            relativevelocity.angle = (relativevelocity.angle + relativevelocity.angular_acceleration) % (2 * cst.PI)
 
             relativevelocity.x += relativevelocity.speed * np.sin(relativevelocity.angle)
             relativevelocity.y += relativevelocity.speed * np.cos(relativevelocity.angle)
             
+            # Handles collision with the edge of the screen
             pmaxx = relativevelocity.x + swidth
             pmaxy = relativevelocity.y + sheight
             if pmaxx > self.maxx:
-                relativevelocity.x = self.maxx - swidth
-                relativevelocity.speed = 0
-                relativevelocity.acceleration = 0
+                relativevelocity.x = self.maxx - swidth - 1
+                relativevelocity.bounce_from_right() 
             if pmaxy > self.maxy:
-                relativevelocity.y = self.maxy - sheight
-                relativevelocity.speed = 0
-                relativevelocity.acceleration = 0
+                relativevelocity.y = self.maxy - sheight - 1
+                relativevelocity.bounce_from_above()
             if relativevelocity.x < self.minx:
-                relativevelocity.x = self.minx
-                relativevelocity.speed = 0
-                relativevelocity.acceleration = 0
+                relativevelocity.x = self.minx + 1
+                relativevelocity.bounce_from_left()
             if relativevelocity.y < self.miny:
-                relativevelocity.y = self.miny
-                relativevelocity.speed = 0
-                relativevelocity.acceleration = 0
+                relativevelocity.y = self.miny + 1
+                relativevelocity.bounce_from_below()
                 
             sprite.x = int(relativevelocity.x)
             sprite.y = int(relativevelocity.y)
+            sprite.angle = -relativevelocity.angle * cst.RAD_TO_DEG
 
+    
 
 class RelativeFrictionSystem(sdl2.ext.Applicator):
     A = 0.001
@@ -120,6 +120,11 @@ class Velocity(object):
         self.d2y = 0
         self.unit = SpeedUnit.PixelTick
 
+class Collision(object):
+    def __init__(self):
+        super(Collision, self).__init__()
+        self.is_impassable = True
+
 class RelativeVelocity(object):
     def __init__(self, x, y):
         super(RelativeVelocity, self).__init__()
@@ -130,6 +135,39 @@ class RelativeVelocity(object):
         self.acceleration = 0
         self.angular_acceleration = 0
         self.unit = SpeedUnit.PixelTick
+
+    def bounce_from_below(self):
+        if self.angle > cst.PI:
+            self.angle = 1.49*cst.PI
+        else:
+            self.angle = 0.51*cst.PI
+        self.speed = self.speed / 2
+        self.acceleration = 0
+
+    def bounce_from_left(self):
+        if self.angle < 0.5 * cst.PI:
+            self.angle = -0.01*cst.PI
+        else:
+            self.angle = 1.01*cst.PI
+        self.speed = self.speed / 2
+        self.acceleration = 0
+
+    def bounce_from_right(self):
+        if self.angle < 1.5 * cst.PI:
+            self.angle = 0.99 * cst.PI
+        else:
+            self.angle = 0.01*cst.PI
+        self.speed = self.speed / 2
+        self.acceleration = 0
+
+    def bounce_from_above(self):
+        if self.angle < cst.PI:
+            self.angle = 0.49*cst.PI
+        else:
+            self.angle = 1.51*cst.PI
+        self.speed = self.speed / 2
+        self.acceleration = 0
+    
 
 class RelativeFriction(object):
     def __init__(self):

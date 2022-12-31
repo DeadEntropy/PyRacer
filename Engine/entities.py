@@ -1,5 +1,5 @@
 import numpy as np
-from movement import Velocity, RelativeVelocity, RelativeFriction
+from movement import Velocity, RelativeVelocity, RelativeFriction, Collision
 from debugsystem import TextObject
 from Others.textsprite import TextSprite
 import sdl2.ext
@@ -36,6 +36,7 @@ class Car(sdl2.ext.Entity):
 class RelativeCar(sdl2.ext.Entity):
     ACCELERATION = 0.1
     ANGULAR_SPEED = 0.05
+    RAD_TO_DEG = 57.2958
     PI = 3.141589
 
     def __init__(self, world, sprite, posx=0, posy=0, angle=0, ai=False):   
@@ -61,14 +62,30 @@ class RelativeCar(sdl2.ext.Entity):
             if sym in (sdl2.SDLK_UP, sdl2.SDLK_DOWN):
                 self.relativevelocity.acceleration = 0   
             if sym in (sdl2.SDLK_LEFT, sdl2.SDLK_RIGHT):
-                self.relativevelocity.angular_acceleration = 0                
+                self.relativevelocity.angular_acceleration = 0
 
     def status(self):
         return f"x = {self.relativevelocity.x:,.1f}\ny = {self.relativevelocity.y:,.1f}\n"\
-            + f"speed = {self.relativevelocity.speed:,.1f}\nangle = {self.relativevelocity.angle * 57.2958:,.1f}\n"\
+            + f"speed = {self.relativevelocity.speed:,.1f}\nangle = {self.relativevelocity.angle * self.RAD_TO_DEG:,.1f}\n"\
             + f"acceleration = {self.relativevelocity.acceleration:,.4f}\nangular_acceleration = {self.relativevelocity.angular_acceleration:,.1f}\n"\
             + f"friction={self.relativefriction.friction_force:,.4f}" 
-    
+
+class VerticalWall(sdl2.ext.Entity):
+    WIDTH = 20
+
+    def __init__(self, world, x, y, length, color, spriteFactory: sdl2.ext.SpriteFactory):
+        self.sprite = spriteFactory.from_color(color, size=(self.WIDTH, length))
+        self.sprite.position = x, y
+        self.collision = Collision()
+
+class HorizontalWall(sdl2.ext.Entity):
+    WIDTH = 20
+
+    def __init__(self, world, x, y, length, color, spriteFactory: sdl2.ext.SpriteFactory):
+        self.sprite = spriteFactory.from_color(color, size=(length, self.WIDTH))
+        self.sprite.position = x, y
+        self.collision = Collision()
+        
 
 class DebugInfo(sdl2.ext.Entity):
     def __init__(self, world, posx, posy, renderer):        

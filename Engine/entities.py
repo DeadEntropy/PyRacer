@@ -3,13 +3,22 @@ from movement import Velocity, RelativeVelocity, RelativeFriction, Collision
 from debugsystem import TextObject
 from Others.textsprite import TextSprite
 import sdl2.ext
+from constants import LayerType
 
-class Car(sdl2.ext.Entity):
+class GameEntity(sdl2.ext.Entity):
+    def __init__(self):
+        super(GameEntity, self).__init__()
+
+    def __repr__(self):
+        return f"{type(self)}(id={self._id})"  
+
+class Car(GameEntity):
     ACCELERATION = 0.1
 
     def __init__(self, world, sprite, posx=0, posy=0, ai=False):
         self.sprite = sprite
         self.sprite.position = posx, posy
+        self.sprite.depth = LayerType.CAR.value
         self.velocity = Velocity(posx, posy)
 
     def update_d2(self, type, sym):
@@ -33,15 +42,16 @@ class Car(sdl2.ext.Entity):
             + f"dx = {self.velocity.dx:,.1f}\ndy = {self.velocity.dy:,.1f}\n"\
             + f"d2x = {self.velocity.d2x:,.1f}\nd2y = {self.velocity.d2y:,.1f}"
 
-class RelativeCar(sdl2.ext.Entity):
+class RelativeCar(GameEntity):
     ACCELERATION = 0.1
     ANGULAR_SPEED = 0.05
     RAD_TO_DEG = 57.2958
     PI = 3.141589
 
-    def __init__(self, world, sprite, posx=0, posy=0, angle=0, ai=False):   
+    def __init__(self, world, sprite, posx=0, posy=0, angle=0, ai=False):
         self.sprite = sprite
         self.sprite.position = posx, posy
+        self.sprite.depth = LayerType.CAR.value
         self.relativevelocity = RelativeVelocity(posx, posy)
         self.relativefriction = RelativeFriction()
 
@@ -70,25 +80,28 @@ class RelativeCar(sdl2.ext.Entity):
             + f"acceleration = {self.relativevelocity.acceleration:,.4f}\nangular_acceleration = {self.relativevelocity.angular_acceleration:,.1f}\n"\
             + f"friction={self.relativefriction.friction_force:,.4f}" 
 
-class VerticalWall(sdl2.ext.Entity):
+class VerticalWall(GameEntity):
     WIDTH = 20
 
     def __init__(self, world, x, y, length, color, spriteFactory: sdl2.ext.SpriteFactory):
         self.sprite = spriteFactory.from_color(color, size=(self.WIDTH, length))
         self.sprite.position = x, y
+        self.sprite.depth = LayerType.WALL.value
         self.collision = Collision()
 
-class HorizontalWall(sdl2.ext.Entity):
+class HorizontalWall(GameEntity):
     WIDTH = 20
 
     def __init__(self, world, x, y, length, color, spriteFactory: sdl2.ext.SpriteFactory):
         self.sprite = spriteFactory.from_color(color, size=(length, self.WIDTH))
         self.sprite.position = x, y
+        self.sprite.depth = LayerType.WALL.value
         self.collision = Collision()
         
 
-class DebugInfo(sdl2.ext.Entity):
-    def __init__(self, world, posx, posy, renderer):        
+class DebugInfo(GameEntity):
+    def __init__(self, world, posx, posy, renderer):   
         self.sprite = TextSprite(renderer, text=" - ", fontSize=11)
         self.sprite.position = posx, posy
+        self.sprite.depth = LayerType.UI.value
         self.scorecounter = TextObject()
